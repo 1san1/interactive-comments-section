@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- displays site properly based on user's device -->
+
+    <link rel="stylesheet" href="./style.css" />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="./images/favicon-32x32.png"
+    />
+
+    <title>Frontend Mentor | Interactive comments section</title>
+
+    <!-- Feel free to remove these styles or customise in your own stylesheet 👍 -->
+    <style>
+      .attribution {
+        font-size: 11px;
+        text-align: center;
+      }
+      .attribution a {
+        color: hsl(228, 45%, 44%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Pull dynamic content from the data.json file -->
+
+    <div id="container"></div>
+
+    <div class="attribution">
+      Challenge by
+      <a href="https://www.frontendmentor.io?ref=challenge" target="_blank"
+        >Frontend Mentor</a
+      >. Coded by <a href="#">Your Name Here</a>.
+    </div>
+  </body>
+
+  <script>
+    let container = document.getElementById("container");
+    let ourRequest = new XMLHttpRequest();
+    ourRequest.open("GET", "./data.json");
+    ourRequest.onload = function () {
+      let u = JSON.parse(ourRequest.responseText);
+      // console.log(u);
+      comments(u.comments, u.currentUser);
+      renderHTML(u.currentUser, container, "Send");
+    };
+    ourRequest.send();
+
+    // renderHTML("yes");
+    function renderHTML(data, container, replyOrSend) {
+      // let container = document.getElementById("container");
+      let section = document.createElement("section");
+      section.setAttribute("id", "replySection");
+
+      let bottomDiv = document.createElement("div");
+      bottomDiv.setAttribute("id", "bottomDiv");
+      let sendButton = document.createElement("button");
+      sendButton.setAttribute("id", "sendButton");
+      sendButton.innerHTML = replyOrSend;
+
+      const image = document.createElement("img");
+      image.setAttribute("id", "mainUser");
+
+      const input = document.createElement("textarea");
+      input.setAttribute("name", "comment");
+      input.setAttribute("class", "inputText");
+
+      input.setAttribute("placeholder", "Add a comment...");
+      image.setAttribute("src", data.image.png);
+
+      bottomDiv.appendChild(image);
+      bottomDiv.appendChild(sendButton);
+
+      section.appendChild(input);
+      section.appendChild(bottomDiv);
+      container.appendChild(section);
+      // container.insertAdjacentHTML("beforeend", data);
+    }
+
+    function comments(data, currentUser, isReply, you) {
+      // console.log(currentUser);
+      let container = document.getElementById("container");
+
+      for (let i = 0; i < data.length; i++) {
+        //loops through the list of comments
+        outline(data[i], container, isReply, currentUser);
+
+        if (Object.keys(data[i]).includes("replies") && data[i].replies != []) {
+          // Checks if comment consists of reply and checks whether reply array is empty or not
+          comments(data[i].replies, currentUser, "isReply");
+        }
+      }
+    }
+
+    function textExtract(data) {
+      const regex = /<\w+? (\w+="\w+")?>|<\/\w+?>/g;
+      return data.replace(regex, "");
+    }
+    function tagInducer(tag, data) {
+      const regex = /[@]\w+/g;
+      const match = data.match(regex);
+      const u = data.replace(
+        regex,
+        `<${tag} class="replyingTo">${match}</${tag}>`
+      );
+
+      return u;
+    }
+
+    function insertAfter(newNode, existingNode) {
+      existingNode.parentNode.insertBefore(newNode, existingNode.nextSibling);
+    }
+
+    function outline(data, parentDiv, replyId, currentUser) {
+      let dataScore = data.score;
+      let section = document.createElement("section");
+      section.setAttribute("class", "commentSection");
+      //conditional statement below checks whether it is a reply to a comment or not
+
+      let header = document.createElement("header");
+      let content = document.createElement("p");
+      let footer = document.createElement("footer");
+      let footerDiv = document.createElement("div");
+      content.setAttribute("class", "content");
+
+      let image = document.createElement("img");
+      let username = document.createElement("p");
+      username.setAttribute("id", "username");
+      let createdAt = document.createElement("p");
+
+      if (replyId) {
+        section.setAttribute("id", replyId);
+        section.setAttribute("class", "commentSection");
+        let text = document.createElement("span");
+        text.setAttribute("class", "replyingTo");
+        text.innerHTML = "@" + data.replyingTo + " ";
+        content.appendChild(text);
+      }
+
+      let score = document.createElement("p");
+      score.setAttribute("class", "score");
+
+      let addScore = document.createElement("img");
+      addScore.setAttribute("src", "./images/icon-plus.svg");
+      let subScore = document.createElement("img");
+      subScore.setAttribute("class", "minus");
+      subScore.setAttribute("src", "./images/icon-minus.svg");
+
+      addScore.addEventListener("click", () => {
+        dataScore++;
+        score.innerHTML = dataScore;
+      });
+
+      subScore.addEventListener("click", () => {
+        dataScore--;
+        score.innerHTML = dataScore;
+      });
+
+      footerDiv.setAttribute("id", "footerDivFlex");
+      score.setAttribute("id", "scoreDecoration");
+
+      image.setAttribute("src", data.user.image.png);
+      username.innerHTML = data.user.username;
+      createdAt.innerHTML = data.createdAt;
+      createdAt.setAttribute("id", "crtdAt");
+
+      header.setAttribute("class", "header");
+
+      header.appendChild(image);
+      header.appendChild(username);
+      // console.log(Object.values(data.user));
+      // console.log(data.user.username === currentUser.username);
+      if (Object.values(data.user)[1] === Object.values(currentUser)[1]) {
+        // console.log("I am here in identification");
+        identification = document.createElement("p");
+        identification.setAttribute("id", "you");
+        identification.innerHTML = "you";
+        header.appendChild(identification);
+      }
+
+      header.appendChild(createdAt);
+
+      content.innerHTML += data.content;
+
+      score.innerHTML = data.score;
+
+      footerDiv.appendChild(addScore);
+      footerDiv.appendChild(score);
+      footerDiv.appendChild(subScore);
+      // footerDiv.appendChild(viewComments);
+      footer.appendChild(footerDiv);
+      // console.log("here");
+      if (Object.values(data.user)[1] !== currentUser.username) {
+        // console.count("here it is");
+        let reply = document.createElement("p");
+        reply.setAttribute("class", "replyButton");
+        reply.innerHTML = "Reply";
+        //making reply responsive.
+        if (window.innerWidth < 720) {
+          footer.appendChild(reply);
+        } else {
+          section.appendChild(reply);
+        }
+        let counter = 0;
+        // const under = document.getElementsByClassName("replyButton");
+        console.log(reply.parentNode);
+        let section1 = document.createElement("section");
+        section1.setAttribute("class", "inputTextreply");
+        //reply will trigger the reply section of the user
+
+        reply.addEventListener("click", () => {
+          counter++;
+          insertAfter(section1, section);
+
+          if (counter % 2 !== 0) {
+            renderHTML(currentUser, section1, "Reply");
+            console.log("hello world i am renderHTML");
+          } else {
+            console.log("hello world I am removeChild");
+            let u = document.getElementById("replySection");
+            section1.remove();
+            section1.removeChild(u);
+          }
+        });
+      } else {
+        let editOption = document.createElement("div");
+        let spanDel = document.createElement("span");
+        spanDel.setAttribute("id", "spanDel");
+        let inputText = document.createElement("textarea");
+
+        let spanEdit = document.createElement("span");
+        spanEdit.setAttribute("class", "spanEdit");
+
+        let spanUpdate = document.createElement("span");
+        spanUpdate.setAttribute("class", "update");
+        spanUpdate.innerHTML = "Update";
+        //extracting text data from content.innerHTML when edit is clicked
+
+        let spanimg1 = document.createElement("img");
+        let spanimg2 = document.createElement("img");
+
+        spanimg1.setAttribute("src", "./images/icon-delete.svg");
+        spanimg2.setAttribute("src", "./images/icon-edit.svg");
+
+        spanDel.appendChild(spanimg1);
+        spanDel.innerHTML += "Delete";
+
+        spanEdit.appendChild(spanimg2);
+        spanEdit.innerHTML += "Edit";
+        spanDel.addEventListener("click", (e) => {
+          if (window.innerWidth < 720) {
+            // console.log(e.target.parentNode.parentNode.parentNode);
+            spanDel.parentNode.parentNode.parentNode.remove();
+          } else {
+            e.target.parentNode.parentNode.remove();
+          }
+        });
+
+        spanEdit.addEventListener("click", () => {
+          inputText.setAttribute("class", "inputText");
+          inputText.setAttribute("id", "editTextA");
+          let editDispN = document.getElementsByClassName("spanEdit");
+          inputText.innerHTML = textExtract(content.innerHTML);
+          console.log(content.innerHTML);
+          content.innerHTML = "";
+          content.appendChild(inputText);
+          if (editDispN) {
+            console.log("voila");
+            editOption.removeChild(spanEdit);
+          }
+          editOption.appendChild(spanUpdate);
+        });
+        spanUpdate.addEventListener("click", () => {
+          let i = document.getElementById("editTextA");
+          let u = document.getElementsByClassName("update");
+          let editDispN = document.getElementsByClassName("spanEdit");
+
+          const data1 = tagInducer("span", inputText.value);
+          console.log(data1);
+          content.innerHTML = data1;
+          // i.style.display = "none";
+          // The ui is working fine but i am confused what code has led to deletion of inputText
+
+          editOption.removeChild(spanUpdate);
+          editOption.appendChild(spanEdit);
+          // content.removeChild(i);
+        });
+
+        editOption.setAttribute("id", "deleteEdit");
+        editOption.appendChild(spanDel);
+        editOption.appendChild(spanEdit);
+        if (window.innerWidth < 720) {
+          footer.appendChild(editOption);
+        } else {
+          section.appendChild(editOption);
+        }
+      }
+      // console.log("afterthis");
+
+      section.appendChild(header);
+      section.appendChild(content);
+      section.appendChild(footer);
+
+      parentDiv.appendChild(section);
+    }
+    // document.getElementById("container").appendChild(elt());
+  </script>
+</html>
